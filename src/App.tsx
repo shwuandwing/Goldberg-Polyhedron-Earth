@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,54 +8,163 @@ import { findPath } from './utils/pathfinding';
 import type { PathfindingAlgorithm } from './utils/pathfinding';
 import './App.css';
 
-const CellMesh = ({ 
-  cell, 
-  color, 
-  onClick, 
-  onHover,
-  isPath 
+const GoldbergGlobe = ({ 
+  board, 
+  startNode, 
+  endNode, 
+  path, 
+  hoveredCell, 
+  onCellClick, 
+  onCellHover 
 }: { 
-  cell: Cell, 
-  color: string, 
-  onClick: () => void, 
-  onHover: () => void,
-  isPath: boolean 
+  board: GoldbergBoard,
+  startNode: number | null,
+  endNode: number | null,
+  path: number[],
+  hoveredCell: Cell | null,
+  onCellClick: (id: number) => void,
+  onCellHover: (cell: Cell | null) => void
 }) => {
-  const geometry = useMemo(() => {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  // Optimized path lookup
+  const pathSet = useMemo(() => new Set(path), [path]);
+
+  // Create merged geometries with cell IDs for perfect picking
+  const { geometry, lineGeometry, cellMap } = useMemo(() => {
     const positions: number[] = [];
-    const center = cell.center;
-    const verts = cell.vertices;
-    for (let i = 0; i < verts.length; i++) {
+    const colors: number[] = [];
+    const cellIds: number[] = [];
+    const linePositions: number[] = [];
+    const map = new Map<number, { start: number, count: number }>();
+    
+    let currentVertex = 0;
+    board.cells.forEach(cell => {
+      const start = currentVertex;
+      const center = cell.center;
+      const verts = cell.vertices;
+      
+      // Build triangles for the cell
+      for (let i = 0; i < verts.length; i++) {
         const v1 = verts[i];
         const v2 = verts[(i + 1) % verts.length];
+        
         positions.push(center.x, center.y, center.z);
         positions.push(v1.x, v1.y, v1.z);
         positions.push(v2.x, v2.y, v2.z);
-    }
+        
+        // Placeholder colors and IDs
+        for(let k=0; k<3; k++) {
+          colors.push(1, 1, 1);
+          cellIds.push(cell.id);
+        }
+        currentVertex += 3;
+      }
+      map.set(cell.id, { start, count: currentVertex - start });
+
+      // Build outline segments
+      for (let i = 0; i < verts.length; i++) {
+        const v1 = verts[i];
+        const v2 = verts[(i + 1) % verts.length];
+        linePositions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+      }
+    });
+    
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geo.setAttribute('aCellId', new THREE.Int32BufferAttribute(cellIds, 1));
     geo.computeVertexNormals();
-    return geo;
-  }, [cell]);
 
-  const lineGeometry = useMemo(() => {
-    const pts = [...cell.vertices, cell.vertices[0]];
-    return new THREE.BufferGeometry().setFromPoints(pts);
-  }, [cell]);
+    const lGeo = new THREE.BufferGeometry();
+    lGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
-  const scale = isPath ? 1.05 : 1;
+    return { geometry: geo, lineGeometry: lGeo, cellMap: map };
+  }, [board]);
+
+  // Handle Dynamic Color Updates
+  useEffect(() => {
+    const colorAttr = geometry.getAttribute('color') as THREE.BufferAttribute;
+    const colors = colorAttr.array as Float32Array;
+
+    board.cells.forEach(cell => {
+      const { start, count } = cellMap.get(cell.id)!;
+      let r = 0.1, g = 0.35, b = 0.6; // Deep ocean
+
+      if (cell.isLand) { r = 0.1, g = 0.45, b = 0.2; } // Lush land
+      if (pathSet.has(cell.id)) { r = 1.0, g = 0.8, b = 0.0; } // Gold path
+      if (cell.id === startNode) { r = 1.0, g = 0.5, b = 0.0; } // Start
+      if (cell.id === endNode) { r = 1.0, g = 0.2, b = 0.2; } // End
+      
+      if (hoveredCell?.id === cell.id) {
+         // High-intensity highlight
+         r = 1.0; g = 1.0; b = 1.0;
+      }
+
+      for (let i = 0; i < count; i++) {
+        const idx = (start + i) * 3;
+        colors[idx] = r;
+        colors[idx + 1] = g;
+        colors[idx + 2] = b;
+      }
+    });
+
+    colorAttr.needsUpdate = true;
+  }, [board, startNode, endNode, pathSet, hoveredCell, geometry, cellMap]);
+
+  // Accurate Picking using the embedded Cell ID attribute
+  const getCellFromEvent = useCallback((e: any) => {
+    const intersect = e.intersections && e.intersections[0];
+    const faceIndex = intersect ? intersect.faceIndex : e.faceIndex;
+    
+    if (faceIndex === undefined) return null;
+    
+    const cellIdAttr = geometry.getAttribute('aCellId') as THREE.BufferAttribute;
+    if (!cellIdAttr) return null;
+
+    // In a non-indexed geometry, faceIndex corresponds to the triangle sequence.
+    // Each triangle has 3 vertices. Since our attribute is 1-component per vertex,
+    // we fetch from vertex (faceIndex * 3).
+    const id = cellIdAttr.getX(faceIndex * 3);
+    return board.cells[id] || null;
+  }, [geometry, board]);
 
   return (
-    <group scale={scale}>
+    <group>
       <mesh 
-        geometry={geometry} 
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
-        onPointerOver={(e) => { e.stopPropagation(); onHover(); }}
+        ref={meshRef} 
+        geometry={geometry}
+        onClick={(e) => {
+          const cell = getCellFromEvent(e);
+          if (cell) onCellClick(cell.id);
+        }}
+        onPointerMove={(e) => {
+          const cell = getCellFromEvent(e);
+          onCellHover(cell);
+        }}
+        onPointerOut={() => onCellHover(null)}
       >
-        <meshStandardMaterial color={color} side={THREE.DoubleSide} flatShading />
+        <meshStandardMaterial vertexColors side={THREE.FrontSide} />
       </mesh>
-      {/* Using primitive to avoid SVG <line> name conflict */}
-      <primitive object={new THREE.LineLoop(lineGeometry, new THREE.LineBasicMaterial({ color: 'black', transparent: true, opacity: 0.2 }))} />
+      
+      {/* High-contrast Hover/Selection Highlight */}
+      {hoveredCell && (
+        <mesh position={hoveredCell.center.clone().multiplyScalar(1.002)}>
+           <sphereGeometry args={[0.015, 16, 16]} />
+           <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      )}
+
+      <lineSegments geometry={lineGeometry}>
+        <lineBasicMaterial 
+          color="black" 
+          polygonOffset 
+          polygonOffsetFactor={1} 
+          polygonOffsetUnits={1}
+          opacity={0.2}
+          transparent={false}
+        />
+      </lineSegments>
     </group>
   );
 };
@@ -105,12 +214,12 @@ function App() {
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '12px', pointerEvents: 'none', minWidth: '240px', border: '1px solid rgba(255,255,255,0.1)' }}>
         <h2 style={{ margin: '0 0 10px 0', color: '#2ecc71', fontSize: '1.4em' }}>Geo-Goldberg Board</h2>
         <div style={{ fontSize: '0.9em' }}>
-            <p style={{ margin: '5px 0' }}>Resolution: GP(20, 20)</p>
-            <p style={{ margin: '5px 0' }}>Hexagons: {board.hexagonCount} | Pentagons: {board.pentagonCount}</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>Resolution: GP(20, 20)</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>Cells: {board.cells.length.toLocaleString()}</p>
             
             <hr style={{ opacity: 0.2, margin: '15px 0' }} />
             <div style={{ pointerEvents: 'auto', marginBottom: '15px' }}>
-                <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>Algorithm:</p>
+                <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>Algorithm:</p>        
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
                         onClick={() => setAlgorithm('BFS')}
@@ -162,39 +271,24 @@ function App() {
         </div>
       </div>
       
-      <Canvas camera={{ position: [0, 0, 4] }}>
-        <ambientLight intensity={0.8} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
-        <OrbitControls />
-        <group rotation={[0, 0, 0]}>
-          {board.cells.map((cell) => {
-            const isStart = cell.id === startNode;
-            const isEnd = cell.id === endNode;
-            const isPath = path.includes(cell.id);
-            const isHovered = hoveredCell?.id === cell.id;
-
-            let color = cell.isLand ? '#1e8449' : '#2874a6';
-            
-            if (isPath) color = '#f1c40f'; 
-            if (isStart) color = '#f39c12';
-            if (isEnd) color = '#e74c3c';
-            if (isHovered && !isStart && !isEnd) color = '#ffffff';
-
-            return (
-              <CellMesh 
-                key={cell.id} 
-                cell={cell} 
-                color={color} 
-                onClick={() => handleCellClick(cell.id)} 
-                onHover={() => setHoveredCell(cell)}
-                isPath={isPath || isHovered}
-              />
-            );
-          })}
-        </group>
+      <Canvas camera={{ position: [0, 0, 3], near: 0.01 }} dpr={[1, 2]}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={2.5} />
+        <pointLight position={[-10, -5, -10]} intensity={1.5} color="#3498db" />
+        <OrbitControls minDistance={1.5} maxDistance={10} makeDefault />
+        <GoldbergGlobe 
+          board={board}
+          startNode={startNode}
+          endNode={endNode}
+          path={path}
+          hoveredCell={hoveredCell}
+          onCellClick={handleCellClick}
+          onCellHover={setHoveredCell}
+        />
       </Canvas>
     </>
   );
 }
 
 export default App;
+

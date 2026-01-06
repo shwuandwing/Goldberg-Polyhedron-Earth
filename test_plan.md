@@ -34,6 +34,13 @@ This document outlines the procedure for verifying the geographical orientation 
 - **Check**: The cell itself should be highlighted in solid white.
 - **Check**: The sidebar should display the correct Cell ID and classification (Land/Ocean).
 
+### 5. Zoom & Clipping Verification
+Run: `node verify_zoom.js`
+**Files**: `zoom_03_in_extreme.png`
+- **Check**: No "double lines" or "hexagons inside hexagons" (Z-fighting between front/back faces).
+- **Check**: No sudden "disappearing" landmasses when zooming in (Near-plane clipping).
+- **Check**: Borders should remain clean and sharp even when very close to the surface.
+
 ## Automated Regression
 The script `src/utils/rendering.test.ts` provides mathematical verification that the GPU buffer correctly maps to the internal data structure. This should be run after any changes to `generateGoldberg` or `GoldbergGlobe`:
 ```bash
