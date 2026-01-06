@@ -2,35 +2,46 @@ import json
 import requests
 import os
 
-# Stable URL for Natural Earth 110m land GeoJSON from a well-known repository
-URL = "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/110m/physical/ne_110m_land.json"
+# URLs for Natural Earth 110m datasets
+LAND_URL = "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/110m/physical/ne_110m_land.json"
+LAKES_URL = "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/110m/physical/ne_110m_lakes.json"
 
 def regenerate():
-    print(f"Fetching data from {URL}...")
+    print("Fetching geographical data...")
     try:
-        response = requests.get(URL)
-        response.raise_for_status()
-        data = response.json()
+        # Fetch Land
+        print(f"  - Fetching Land from {LAND_URL}")
+        land_resp = requests.get(LAND_URL)
+        land_resp.raise_for_status()
+        land_data = land_resp.json()
+
+        # Fetch Lakes
+        print(f"  - Fetching Lakes from {LAKES_URL}")
+        lakes_resp = requests.get(LAKES_URL)
+        lakes_resp.raise_for_status()
+        lakes_data = lakes_resp.json()
         
-        # Keep only the properties the app expects
-        # The app's logic in goldberg.ts/rs only uses the geometry
-        # but we preserve some properties for consistency with the original.
-        simplified_features = []
-        for feature in data.get("features", []):
-            new_feature = {
+        combined_features = []
+
+        # Process Land
+        for feature in land_data.get("features", []):
+            combined_features.append({
                 "type": "Feature",
-                "properties": {
-                    "featurecla": feature["properties"].get("featurecla", "Land"),
-                    "scalerank": feature["properties"].get("scalerank", 0),
-                    "min_zoom": feature["properties"].get("min_zoom", 0.0)
-                },
+                "properties": { "featurecla": "Land" },
                 "geometry": feature["geometry"]
-            }
-            simplified_features.append(new_feature)
+            })
+
+        # Process Lakes (Significant lakes only)
+        for feature in lakes_data.get("features", []):
+            combined_features.append({
+                "type": "Feature",
+                "properties": { "featurecla": "Lake" },
+                "geometry": feature["geometry"]
+            })
         
-        simplified_data = {
+        output_data = {
             "type": "FeatureCollection",
-            "features": simplified_features
+            "features": combined_features
         }
 
         # Paths to save
@@ -43,11 +54,11 @@ def regenerate():
 
         # Save to both locations
         with open(ts_path, 'w', encoding='utf-8') as f:
-            json.dump(simplified_data, f, separators=(',', ':'))
+            json.dump(output_data, f, separators=(',', ':'))
         print(f"Saved to {ts_path}")
 
         with open(rust_path, 'w', encoding='utf-8') as f:
-            json.dump(simplified_data, f, separators=(',', ':'))
+            json.dump(output_data, f, separators=(',', ':'))
         print(f"Saved to {rust_path}")
 
         print("Regeneration complete.")

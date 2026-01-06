@@ -47,17 +47,28 @@ function isPointInLand(pos: THREE.Vector3): boolean {
   const lat = Math.asin(pos.y) * (180 / Math.PI);
   const point: [number, number] = [lon, lat];
 
+  let inLand = false;
+  let inLake = false;
+
   for (const feature of (landData as any).features) {
     const geometry = feature.geometry;
+    const isLake = feature.properties.featurecla === 'Lake';
+    
     if (geometry.type === 'Polygon') {
-      if (isInPolygon(point, geometry.coordinates)) return true;
+      if (isInPolygon(point, geometry.coordinates)) {
+        if (isLake) inLake = true; else inLand = true;
+      }
     } else if (geometry.type === 'MultiPolygon') {
       for (const polyCoords of geometry.coordinates) {
-        if (isInPolygon(point, polyCoords)) return true;
+        if (isInPolygon(point, polyCoords)) {
+          if (isLake) inLake = true; else inLand = true;
+        }
       }
     }
+    // Optimization: if we found it's a lake, we know it's not land (lakes are 'holes' in our logic)
+    if (inLake) return false;
   }
-  return false;
+  return inLand;
 }
 
 function isInPolygon(point: [number, number], rings: number[][][]): boolean {

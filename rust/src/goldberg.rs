@@ -27,6 +27,7 @@ struct GeoJson {
 #[derive(Deserialize)]
 struct Feature {
     geometry: Geometry,
+    properties: std::collections::HashMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -56,19 +57,28 @@ fn is_land(pos: Vec3, geojson: &GeoJson) -> bool {
     let lat = pos.y.asin().to_degrees();
     let p = [lon, lat];
 
+    let mut in_land = false;
+    let mut in_lake = false;
+
     for feature in &geojson.features {
+        let is_lake = feature.properties.get("featurecla").map(|v| v == "Lake").unwrap_or(false);
         match &feature.geometry {
             Geometry::Polygon { coordinates } => {
-                if is_in_rings(p, coordinates) { return true; }
+                if is_in_rings(p, coordinates) {
+                    if is_lake { in_lake = true; } else { in_land = true; }
+                }
             }
             Geometry::MultiPolygon { coordinates } => {
                 for poly in coordinates {
-                    if is_in_rings(p, poly) { return true; }
+                    if is_in_rings(p, poly) {
+                        if is_lake { in_lake = true; } else { in_land = true; }
+                    }
                 }
             }
         }
+        if in_lake { return false; }
     }
-    false
+    in_land
 }
 
 fn is_in_rings(p: [f32; 2], rings: &Vec<Vec<[f32; 2]>>) -> bool {
