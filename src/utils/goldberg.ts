@@ -42,7 +42,8 @@ function pointInPolygon(point: [number, number], vs: number[][]) {
 }
 
 function isPointInLand(pos: THREE.Vector3): boolean {
-  const lon = Math.atan2(pos.x, pos.z) * (180 / Math.PI);
+  // Orientation Fix: Consistent with Rust reference and to ensure East is Right
+  const lon = Math.atan2(-pos.x, pos.z) * (180 / Math.PI);
   const lat = Math.asin(pos.y) * (180 / Math.PI);
   const point: [number, number] = [lon, lat];
 
@@ -170,22 +171,26 @@ export function generateGoldberg(m: number, n: number): GoldbergBoard {
     const bz = Math.floor(center.z / bucketSize);
 
     // Search neighboring buckets for candidates
-    for (let x = bx-2; x <= bx+2; x++) {
-      for (let y = by-2; y <= by+2; y++) {
-        for (let z = bz-2; z <= bz+2; z++) {
+    for (let x = bx-3; x <= bx+3; x++) {
+      for (let y = by-3; y <= by+3; y++) {
+        for (let z = bz-3; z <= bz+3; z++) {
           const key = `${x},${y},${z}`;
           const bucket = spatialBuckets.get(key);
           if (bucket) {
             for (const otherIdx of bucket) {
               if (i === otherIdx) continue;
               const d = center.distanceTo(uniqueCenters[otherIdx]);
-              if (d < 0.1) candidates.push({ idx: otherIdx, dist: d });
+              if (d < 0.2) candidates.push({ idx: otherIdx, dist: d });
             }
           }
         }
       }
     }
     candidates.sort((a, b) => a.dist - b.dist);
+
+    if (candidates.length < 5) {
+       throw new Error(`Cell ${i} has only ${candidates.length} neighbors. Spatial search failed.`);
+    }
 
     const neighbors = [candidates[0].idx, candidates[1].idx, candidates[2].idx, candidates[3].idx, candidates[4].idx];
     if (candidates[5] && candidates[5].dist < candidates[4].dist * 1.5) {
