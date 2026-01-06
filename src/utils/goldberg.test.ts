@@ -11,6 +11,33 @@ describe('Goldberg Board Integration', () => {
     expect(board.hexagonCount).toBe(260);
   });
 
+  it('verifies neighbor reciprocity and cell types', () => {
+    const board = generateGoldberg(2, 2); // Small board for speed
+    
+    board.cells.forEach(cell => {
+      // Every cell must have 5 or 6 neighbors
+      expect([5, 6]).toContain(cell.neighbors.length);
+      
+      // Type must match neighbor count
+      if (cell.neighbors.length === 5) {
+        expect(cell.type).toBe('pentagon');
+      } else {
+        expect(cell.type).toBe('hexagon');
+      }
+
+      // Reciprocity: if B is neighbor of A, then A must be neighbor of B
+      cell.neighbors.forEach(neighborId => {
+        const neighbor = board.cells[neighborId];
+        expect(neighbor.neighbors).toContain(cell.id);
+      });
+
+      // Vertices count should match neighbor count
+      expect(cell.vertices.length).toBe(cell.neighbors.length);
+    });
+
+    expect(board.pentagonCount).toBe(12);
+  });
+
   it('can find a path across the GP(3,3) board', () => {
     const board = generateGoldberg(3, 3);
     const startId = 0;
@@ -37,5 +64,13 @@ describe('Goldberg Board Integration', () => {
     expect(board.cells.length).toBe(752);
     expect(board.pentagonCount).toBe(12);
     expect(board.hexagonCount).toBe(740);
+  });
+
+  it('generates a valid GP(1,1) board (Truncated Icosahedron)', () => {
+    const board = generateGoldberg(1, 1);
+    // GP(1,1) has T=3. Faces = 10(2)+12 = 32.
+    expect(board.cells.length).toBe(32);
+    expect(board.pentagonCount).toBe(12);
+    expect(board.hexagonCount).toBe(20);
   });
 });

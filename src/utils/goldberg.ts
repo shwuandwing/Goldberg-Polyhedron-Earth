@@ -28,7 +28,7 @@ export interface GoldbergBoard {
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 
-function pointInPolygon(point: [number, number], vs: number[][]) {
+export function pointInPolygon(point: [number, number], vs: number[][]) {
   const x = point[0], y = point[1];
   let inside = false;
   for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -41,7 +41,7 @@ function pointInPolygon(point: [number, number], vs: number[][]) {
   return inside;
 }
 
-function isPointInLand(pos: THREE.Vector3): boolean {
+export function isPointInLand(pos: THREE.Vector3): boolean {
   // Orientation Fix: Consistent with Rust reference and to ensure East is Right
   const lon = Math.atan2(-pos.x, pos.z) * (180 / Math.PI);
   const lat = Math.asin(pos.y) * (180 / Math.PI);
@@ -71,7 +71,7 @@ function isPointInLand(pos: THREE.Vector3): boolean {
   return inLand;
 }
 
-function isInPolygon(point: [number, number], rings: number[][][]): boolean {
+export function isInPolygon(point: [number, number], rings: number[][][]): boolean {
   if (!pointInPolygon(point, rings[0])) return false;
   for (let i = 1; i < rings.length; i++) {
     if (pointInPolygon(point, rings[i])) return false;
@@ -177,21 +177,30 @@ export function generateGoldberg(m: number, n: number): GoldbergBoard {
   // Spatial optimization for neighbor finding
   const cells: Cell[] = uniqueCenters.map((center, i) => {
     const candidates: {idx: number, dist: number}[] = [];
-    const bx = Math.floor(center.x / bucketSize);
-    const by = Math.floor(center.y / bucketSize);
-    const bz = Math.floor(center.z / bucketSize);
+    
+    if (uniqueCenters.length < 500) {
+      // Small board: exact O(N^2) search is fast and safe
+      for (let j = 0; j < uniqueCenters.length; j++) {
+        if (i === j) continue;
+        candidates.push({ idx: j, dist: center.distanceTo(uniqueCenters[j]) });
+      }
+    } else {
+      // Large board: spatial optimization
+      const bx = Math.floor(center.x / bucketSize);
+      const by = Math.floor(center.y / bucketSize);
+      const bz = Math.floor(center.z / bucketSize);
 
-    // Search neighboring buckets for candidates
-    for (let x = bx-3; x <= bx+3; x++) {
-      for (let y = by-3; y <= by+3; y++) {
-        for (let z = bz-3; z <= bz+3; z++) {
-          const key = `${x},${y},${z}`;
-          const bucket = spatialBuckets.get(key);
-          if (bucket) {
-            for (const otherIdx of bucket) {
-              if (i === otherIdx) continue;
-              const d = center.distanceTo(uniqueCenters[otherIdx]);
-              if (d < 0.2) candidates.push({ idx: otherIdx, dist: d });
+      for (let x = bx-6; x <= bx+6; x++) {
+        for (let y = by-6; y <= by+6; y++) {
+          for (let z = bz-6; z <= bz+6; z++) {
+            const key = `${x},${y},${z}`;
+            const bucket = spatialBuckets.get(key);
+            if (bucket) {
+              for (const otherIdx of bucket) {
+                if (i === otherIdx) continue;
+                const d = center.distanceTo(uniqueCenters[otherIdx]);
+                if (d < 0.4) candidates.push({ idx: otherIdx, dist: d });
+              }
             }
           }
         }
