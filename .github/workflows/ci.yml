@@ -32,14 +32,3 @@ jobs:
     - name: Test Node project
       run: npm test -- run # vitest runs in watch mode by default, 'run' makes it run once
 
-    # Rust Setup and Tests
-    - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Build Rust project
-      working-directory: ./rust
-      run: cargo build --verbose
-
-    - name: Test Rust project
-      working-directory: ./rust
-      run: cargo test --verbose

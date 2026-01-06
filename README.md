@@ -27,7 +27,6 @@ A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(25, 25)$) Earth
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Three.js (@react-three/fiber), Vite.
-- **Rust (Internal Reference)**: Bevy 0.15 implementation for high-performance generation.
 
 ## How to Run (TypeScript App)
 
@@ -67,4 +66,4 @@ Captures screenshots of key landmarks (Prime Meridian, Poles, Bering Strait) to 
 - `src/utils/pathfinding.ts`: Pathfinding implementations (BFS & A*).
 - `src/utils/rendering.ts`: Optimized BufferGeometry creation and color update logic.
 - `src/App.tsx`: Main visualization component and interaction logic.
-- `rust/`: Reference Bevy implementation.
+
