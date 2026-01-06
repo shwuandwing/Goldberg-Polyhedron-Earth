@@ -35,21 +35,21 @@ import { chromium } from 'playwright';
     await page.screenshot({ path: 'test_results/01_Prime_Meridian.png' });
 
     // 2. Look at North Pole
-    // In OrbitControls, dragging mouse DOWN tilts the camera UP to see the North Pole.
+    // Dragging mouse UP reveals the North Pole.
     console.log('Capturing: 02_North_Pole.png');
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    await page.mouse.move(cx, cy + 400, { steps: 30 });
+    await page.mouse.move(cx, cy - 400, { steps: 30 });
     await page.mouse.up();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'test_results/02_North_Pole.png' });
 
     // 3. Look at South Pole
-    // Dragging mouse UP tilts the camera DOWN to see the South Pole.
+    // Dragging mouse DOWN reveals the South Pole.
     console.log('Capturing: 03_South_Pole.png');
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    await page.mouse.move(cx, cy - 800, { steps: 30 }); // Move up from the North Pole view
+    await page.mouse.move(cx, cy + 800, { steps: 30 }); // Move down from the North Pole view
     await page.mouse.up();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'test_results/03_South_Pole.png' });
