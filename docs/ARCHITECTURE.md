@@ -5,27 +5,36 @@ This project implements a high-resolution, interactive Earth globe using a Goldb
 ## Core Components
 
 ### 1. Goldberg Geometry Generation (`src/utils/goldberg.ts`)
-- **Icosahedron Basis**: Starts with a standard 20-faced icosahedron.
-- **Subdivision**: Each triangular face is subdivided into a hexagonal grid based on parameters $(m, n)$. For this project, we use $m=20, n=20$ (Class II).
-- **Dual Construction**: The cells (hexagons/pentagons) are created by taking the dual of the subdivided icosahedron.
-- **Spatial Optimization**: Uses 3D spatial hashing (bucket system) to deduplicate vertices and find neighbors in $O(N)$ time, supporting boards with over 12,000 cells.
+- **Icosahedron Basis**: Starts with a standard 20-faced icosahedron defined by 12 vertices.
+- **Subdivision**: Each triangular face is subdivided into a grid based on parameters $(m, n)$.
+- **Resolution**: This project uses $GP(25, 25)$, resulting in exactly 18,752 cells (12 pentagons and 18,740 hexagons).
+- **Spatial Optimization**: Uses 3D spatial hashing (bucket system) to deduplicate vertices and find neighbors efficiently. The neighbor search radius is tuned to ensure connectivity at high resolutions.
+- **Deduplication**: Points are merged if they are within $0.005$ units on a unit sphere.
 
 ### 2. Geographical Classification
-- **GeoJSON Integration**: Uses Natural Earth's 110m land dataset.
-- **Point-in-Polygon**: Every cell center is mapped to Latitude/Longitude and checked against the world's landmasses using a Ray Casting algorithm.
-- **Coordinate System**: Each cell tracks its source Icosahedron face and local $(u, v)$ coordinates.
+- **Dataset**: Uses Natural Earth's 110m land and lake dataset.
+- **Logic**: Every cell center is mapped to Latitude/Longitude.
+- **Exclusion**: Lakes are specifically identified and classified as "Ocean" (Water) to provide accurate shorelines (e.g., Great Lakes, Caspian Sea).
+- **Polar Regions**: Correctly identifies Antarctica as land and the North Pole as water.
 
 ### 3. Pathfinding (`src/utils/pathfinding.ts`)
-- Implements a Breadth-First Search (BFS) on the polyhedron graph.
-- Optimized for the unweighted hexagonal grid to find the shortest path between any two global locations.
+- **BFS**: Standard Breadth-First Search for shortest hop-count paths.
+- **A* Search**: Optimized pathfinding using Euclidean distance as an admissible heuristic. A* is significantly faster for long-distance paths across the 18k+ cell graph.
 
-### 4. Visualization (`src/App.tsx`)
-- Powered by **React Three Fiber** and **Three.js**.
-- Each cell is rendered as a distinct mesh with custom coloring (Land: Green, Ocean: Blue, Path: Gold).
-- Interactive controls via `OrbitControls`.
+### 4. Optimized Rendering (`src/utils/rendering.ts`)
+- **Geometry Merging**: All 18,752 cells are merged into a single `BufferGeometry` to minimize draw calls and maximize GPU throughput.
+- **Vertex Attributes**: 
+  - `position`: Triangle vertices for all cells.
+  - `color`: Vertex colors updated dynamically via `updateColors`.
+  - `aCellId`: A custom attribute storing the cell ID for every vertex, allowing for $O(1)$ picking in the fragment shader/picking logic.
+- **Color Priorities**: Colors are applied in a strict priority order: Hover > End Node > Start Node > Path > Terrain (Land/Ocean).
+
+### 5. UI & Interaction (`src/App.tsx`)
+- **React Three Fiber**: Orchestrates the Three.js scene.
+- **Decoupled Logic**: The component is "thin," delegating geometry creation and color updates to pure utility functions, which allows for 100% unit test coverage of the rendering logic.
 
 ## Mathematical Formulas
 
 - **Triangulation Number ($T$):** $T = m^2 + mn + n^2$
 - **Total Cells ($F$):** $10(T - 1) + 12$
-- For $(20, 20)$: $T = 1200$, Total Cells = $12,002$.
+- For $(25, 25)$: $T = 1875$, Total Cells = $10(1874) + 12 = 18,752$.

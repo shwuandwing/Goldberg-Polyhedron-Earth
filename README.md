@@ -41,9 +41,30 @@ A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(25, 25)$) Earth
    ```
 3. Open the browser to the link provided (e.g., `http://localhost:5173`).
 
+## Testing
+
+The project includes a comprehensive test suite covering geometry, geography, pathfinding, and rendering logic.
+
+### Unit Tests (Vitest)
+```bash
+npm test
+```
+Tests include:
+- **Geometry**: Euler characteristics, neighbor reciprocity, and $GP(25,25)$ consistency.
+- **Geography**: Polar classification, major landmass checks, and lake exclusion.
+- **Pathfinding**: BFS vs A* hop-count parity and disconnection handling.
+- **Rendering**: Face-to-cell ID mapping and color priority.
+
+### Visual Verification (Playwright)
+```bash
+node verify_world.js
+```
+Captures screenshots of key landmarks (Prime Meridian, Poles, Bering Strait) to ensure correct orientation and hover states.
+
 ## Project Structure
 
 - `src/utils/goldberg.ts`: Goldberg Polyhedron geometry and neighbor graph generation.
 - `src/utils/pathfinding.ts`: Pathfinding implementations (BFS & A*).
+- `src/utils/rendering.ts`: Optimized BufferGeometry creation and color update logic.
 - `src/App.tsx`: Main visualization component and interaction logic.
 - `rust/`: Reference Bevy implementation.

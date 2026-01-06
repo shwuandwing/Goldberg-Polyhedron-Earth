@@ -50,5 +50,5 @@ Run: `node verify_rotation_shape.js`
 ## Automated Regression
 The script `src/utils/rendering.test.ts` provides mathematical verification that the GPU buffer correctly maps to the internal data structure. This should be run after any changes to `generateGoldberg` or `GoldbergGlobe`:
 ```bash
-npx vitest run src/utils/rendering.test.ts
+npm test -- src/utils/rendering.test.ts
 ```
