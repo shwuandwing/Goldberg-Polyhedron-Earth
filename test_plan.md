@@ -5,7 +5,10 @@ This document outlines the procedure for verifying the geographical orientation 
 ## Setup
 1. Start the development server: `npm run dev`
 2. Ensure the server is running on `http://localhost:5174/` (or update `verify_world.js`).
-3. Run the verification script: `node verify_world.js`
+3. Run the verification scripts: `node verify_world.js; node verify_zoom.js; node verify_rotation_shape.js`
+
+## Agent Verification Instruction
+**IMPORTANT**: After running the scripts, the agent MUST use the `read_file` tool to inspect each generated PNG file in the `test_results/` folder and manually verify that the "Check" items in the "Verification Steps" below are met. The agent must report its findings for each image.
 
 ## Verification Steps
 
