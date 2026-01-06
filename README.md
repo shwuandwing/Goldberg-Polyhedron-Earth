@@ -1,10 +1,10 @@
 # Goldberg Earth Visualization
 
-A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(20, 20)$) Earth with interactive pathfinding and geographical classification.
+A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(25, 25)$) Earth with interactive pathfinding and geographical classification.
 
 ## Features
 
-- **High-Resolution Generation**: Algorithmic generation of 12,002 cells (hexagons and pentagons).
+- **High-Resolution Generation**: Algorithmic generation of over 18,000 cells (hexagons and pentagons).
 - **Geographical Accuracy**: Real-world landmass mapping using Natural Earth data.
 - **Pathfinding Suite**:
   - **A* Search**: Fast, spatially-aware pathfinding using Euclidean heuristics.

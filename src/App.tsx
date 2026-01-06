@@ -150,7 +150,7 @@ function App() {
   const [algorithm, setAlgorithm] = useState<PathfindingAlgorithm>('AStar');
 
   useEffect(() => {
-    const b = generateGoldberg(20, 20);
+    const b = generateGoldberg(25, 25);
     setBoard(b);
   }, []);
 
@@ -186,7 +186,7 @@ function App() {
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '12px', pointerEvents: 'none', minWidth: '240px', border: '1px solid rgba(255,255,255,0.1)' }}>
         <h2 style={{ margin: '0 0 10px 0', color: '#2ecc71', fontSize: '1.4em' }}>Geo-Goldberg Board</h2>
         <div style={{ fontSize: '0.9em' }}>
-            <p style={{ margin: '5px 0', color: 'white' }}>Resolution: GP(20, 20)</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>Resolution: GP(25, 25)</p>
             <p style={{ margin: '5px 0', color: 'white' }}>Cells: {board.cells.length.toLocaleString()}</p>
             
             <hr style={{ opacity: 0.2, margin: '15px 0' }} />

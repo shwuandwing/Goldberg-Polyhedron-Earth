@@ -2,11 +2,11 @@
 
 ## Project Identity
 - **Context**: High-resolution Goldberg Polyhedron Earth visualization.
-- **Core Parameters**: $GP(20, 20)$, 12,002 cells.
+- **Core Parameters**: $GP(25, 25)$, ~18,762 cells.
 - **Tech Stack**: Rust (Bevy 0.15) and TypeScript (React/Three.js).
 
 ## Architecture Decisions
-- **Rendering Optimization (TS)**: All 12,002 cells are merged into a single `BufferGeometry` to minimize draw calls. Direct buffer attribute manipulation is used for hover/path colors.
+- **Rendering Optimization (TS)**: All cells are merged into a single `BufferGeometry` to minimize draw calls. Direct buffer attribute manipulation is used for hover/path colors.
 - **Orientation Fix**: Lon/lat calculation uses `-pos.x` in `atan2` to ensure East is right and West is left, matching right-handed coordinate systems.
 - **Deduplication**: 3D spatial hashing (buckets) is used for vertex merging and neighbor finding. Increased search radius ensures stability at high resolutions.
 - **Geography**: Points are classified as Land/Ocean via ray-casting against a GeoJSON landmass dataset.
@@ -14,7 +14,7 @@
 
 ## Current State
 - **Rust Version**: High-performance reference implementation using Bevy.
-- **TypeScript Version**: Reached parity with the Rust version in resolution ($GP(20,20)$) and performance (via geometry merging).
+- **TypeScript Version**: Reached parity with (and exceeds initial) resolution ($GP(25,25)$) and performance (via geometry merging).
 - **UI**: Includes algorithm toggles (BFS vs A*) and high-fidelity interaction feedback.
 
 ## Technical Nuances
