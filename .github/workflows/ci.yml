@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Node.js Setup and Tests
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install Node dependencies
+      run: npm ci
+
+    - name: Lint Node project
+      run: npm run lint
+
+    - name: Build Node project
+      run: npm run build
+
+    - name: Test Node project
+      run: npm test -- run # vitest runs in watch mode by default, 'run' makes it run once
+
+    # Rust Setup and Tests
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build Rust project
+      working-directory: ./rust
+      run: cargo build --verbose
+
+    - name: Test Rust project
+      working-directory: ./rust
+      run: cargo test --verbose
