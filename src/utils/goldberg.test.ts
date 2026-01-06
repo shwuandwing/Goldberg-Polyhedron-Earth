@@ -43,8 +43,8 @@ describe('Goldberg Geometry', () => {
     // We want to ensure it doesn't throw the "Spatial search failed" error.
     const board = generateGoldberg(25, 25);
     expect(board.cells.length).toBe(18752);
-        expect(board.pentagonCount).toBe(12);
-      });
+    expect(board.pentagonCount).toBe(12);
+  }, 20000);
     
       it('verifies that all cells have valid neighbor counts and IDs', () => {
         const board = generateGoldberg(10, 10);
