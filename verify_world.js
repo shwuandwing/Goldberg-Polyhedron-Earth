@@ -22,36 +22,46 @@ import { chromium } from 'playwright';
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
 
+    // 0. Adjust Initial Rotation to Prime Meridian (Center on Atlantic/Africa)
+    // The default Vite view often faces the Pacific. We drag Right to see the Atlantic.
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 400, cy, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(1000);
+
     // 1. Initial State (Typically Africa/Prime Meridian)
     console.log('Capturing: 01_Prime_Meridian.png');
     await page.screenshot({ path: 'test_results/01_Prime_Meridian.png' });
 
     // 2. Look at North Pole
+    // In OrbitControls, dragging mouse DOWN tilts the camera UP to see the North Pole.
     console.log('Capturing: 02_North_Pole.png');
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    await page.mouse.move(cx, cy + 300, { steps: 30 });
+    await page.mouse.move(cx, cy + 400, { steps: 30 });
     await page.mouse.up();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'test_results/02_North_Pole.png' });
 
     // 3. Look at South Pole
+    // Dragging mouse UP tilts the camera DOWN to see the South Pole.
     console.log('Capturing: 03_South_Pole.png');
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    await page.mouse.move(cx, cy - 600, { steps: 30 });
+    await page.mouse.move(cx, cy - 800, { steps: 30 }); // Move up from the North Pole view
     await page.mouse.up();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'test_results/03_South_Pole.png' });
 
     // 4. Rotate to Pacific / Bering Strait
     console.log('Capturing: 04_Bering_Strait.png');
-    // Reset to center first (approximate)
+    // Reset and rotate significantly to the Pacific
     await page.reload();
     await page.waitForTimeout(3000);
     await page.mouse.move(cx, cy);
     await page.mouse.down();
-    await page.mouse.move(cx + 500, cy, { steps: 30 }); 
+    await page.mouse.move(cx - 400, cy, { steps: 30 }); 
     await page.mouse.up();
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'test_results/04_Bering_Strait.png' });
