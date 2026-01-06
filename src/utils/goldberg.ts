@@ -142,7 +142,7 @@ export function generateGoldberg(m: number, n: number): GoldbergBoard {
             const bucket = spatialBuckets.get(key);
             if (bucket) {
               for (const idx of bucket) {
-                if (uniqueCenters[idx].distanceTo(pos) < 0.001) {
+                if (uniqueCenters[idx].distanceTo(pos) < 0.005) {
                   found = true;
                   break;
                 }

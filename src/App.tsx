@@ -31,21 +31,12 @@ const GoldbergGlobe = ({
   const pathSet = useMemo(() => new Set(path), [path]);
 
   // Create merged geometries with cell IDs for perfect picking
-  const { geometry, lineGeometry, cellMap } = useMemo(() => {
+  const { geometry, cellMap } = useMemo(() => {
     const positions: number[] = [];
     const colors: number[] = [];
     const cellIds: number[] = [];
-    const linePositions: number[] = [];
     const map = new Map<number, { start: number, count: number }>();
     
-    // Deduplicate edges to prevent double-drawing and Z-fighting
-    const seenEdges = new Set<string>();
-    const getEdgeKey = (v1: THREE.Vector3, v2: THREE.Vector3) => {
-      const p1 = `${v1.x.toFixed(4)},${v1.y.toFixed(4)},${v1.z.toFixed(4)}`;
-      const p2 = `${v2.x.toFixed(4)},${v2.y.toFixed(4)},${v2.z.toFixed(4)}`;
-      return p1 < p2 ? `${p1}|${p2}` : `${p2}|${p1}`;
-    };
-
     let currentVertex = 0;
     board.cells.forEach(cell => {
       const start = currentVertex;
@@ -68,17 +59,6 @@ const GoldbergGlobe = ({
         currentVertex += 3;
       }
       map.set(cell.id, { start, count: currentVertex - start });
-
-      // Build deduplicated outline segments
-      for (let i = 0; i < verts.length; i++) {
-        const v1 = verts[i];
-        const v2 = verts[(i + 1) % verts.length];
-        const key = getEdgeKey(v1, v2);
-        if (!seenEdges.has(key)) {
-          linePositions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
-          seenEdges.add(key);
-        }
-      }
     });
     
     const geo = new THREE.BufferGeometry();
@@ -88,11 +68,7 @@ const GoldbergGlobe = ({
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
 
-    const lGeo = new THREE.BufferGeometry();
-    lGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-    lGeo.computeBoundingSphere();
-
-    return { geometry: geo, lineGeometry: lGeo, cellMap: map };
+    return { geometry: geo, cellMap: map };
   }, [board]);
 
   // Handle Dynamic Color Updates
@@ -152,9 +128,6 @@ const GoldbergGlobe = ({
         <meshStandardMaterial 
           vertexColors 
           side={THREE.FrontSide} 
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
         />
       </mesh>
       
@@ -164,15 +137,6 @@ const GoldbergGlobe = ({
            <meshBasicMaterial color="#ffffff" />
         </mesh>
       )}
-
-      <lineSegments geometry={lineGeometry}>
-        <lineBasicMaterial 
-          color="black" 
-          opacity={0.4}
-          transparent={false}
-          depthWrite={true}
-        />
-      </lineSegments>
     </group>
   );
 };
