@@ -1,0 +1,41 @@
+# Goldberg Earth - Visual Verification Plan
+
+This document outlines the procedure for verifying the geographical orientation and rendering accuracy of the Goldberg Polyhedron Earth visualization.
+
+## Setup
+1. Start the development server: `npm run dev`
+2. Ensure the server is running on `http://localhost:5174/` (or update `verify_world.js`).
+3. Run the verification script: `node verify_world.js`
+
+## Verification Steps
+
+### 1. Global Orientation (Prime Meridian)
+**File**: `01_Prime_Meridian.png`
+- **Check**: The Atlantic Ocean should be centered.
+- **Check**: Africa must be on the **Right** (East) of the Atlantic.
+- **Check**: South America must be on the **Left** (West) of the Atlantic.
+- **Fail Condition**: If South America is on the Right, the longitude is mirrored (atan2 x/z error).
+
+### 2. Polar Accuracy (North Pole)
+**File**: `02_North_Pole.png`
+- **Action**: Look directly down at the North Pole.
+- **Check**: Greenland should be positioned between Canada (West) and Northern Europe (East).
+- **Check**: The landmass shapes should expand correctly outwards from the pole.
+
+### 3. Pacific Alignment (Bering Strait)
+**File**: `04_Bering_Strait.png`
+- **Check**: Russia (Siberia) should be on the **Left** (West) of the strait.
+- **Check**: Alaska should be on the **Right** (East) of the strait.
+- **Check**: Australia and Indonesia should be visible in the lower-left quadrant.
+
+### 4. Interactive Feedback
+**File**: `05_Hover_State.png`
+- **Check**: A white dot (sphere) should appear exactly at the center of the cell under the mouse cursor.
+- **Check**: The cell itself should be highlighted in solid white.
+- **Check**: The sidebar should display the correct Cell ID and classification (Land/Ocean).
+
+## Automated Regression
+The script `src/utils/rendering.test.ts` provides mathematical verification that the GPU buffer correctly maps to the internal data structure. This should be run after any changes to `generateGoldberg` or `GoldbergGlobe`:
+```bash
+npx vitest run src/utils/rendering.test.ts
+```
