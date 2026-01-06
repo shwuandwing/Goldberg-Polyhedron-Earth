@@ -38,6 +38,14 @@ const GoldbergGlobe = ({
     const linePositions: number[] = [];
     const map = new Map<number, { start: number, count: number }>();
     
+    // Deduplicate edges to prevent double-drawing and Z-fighting
+    const seenEdges = new Set<string>();
+    const getEdgeKey = (v1: THREE.Vector3, v2: THREE.Vector3) => {
+      const p1 = `${v1.x.toFixed(4)},${v1.y.toFixed(4)},${v1.z.toFixed(4)}`;
+      const p2 = `${v2.x.toFixed(4)},${v2.y.toFixed(4)},${v2.z.toFixed(4)}`;
+      return p1 < p2 ? `${p1}|${p2}` : `${p2}|${p1}`;
+    };
+
     let currentVertex = 0;
     board.cells.forEach(cell => {
       const start = currentVertex;
@@ -53,7 +61,6 @@ const GoldbergGlobe = ({
         positions.push(v1.x, v1.y, v1.z);
         positions.push(v2.x, v2.y, v2.z);
         
-        // Placeholder colors and IDs
         for(let k=0; k<3; k++) {
           colors.push(1, 1, 1);
           cellIds.push(cell.id);
@@ -62,11 +69,15 @@ const GoldbergGlobe = ({
       }
       map.set(cell.id, { start, count: currentVertex - start });
 
-      // Build outline segments
+      // Build deduplicated outline segments
       for (let i = 0; i < verts.length; i++) {
         const v1 = verts[i];
         const v2 = verts[(i + 1) % verts.length];
-        linePositions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+        const key = getEdgeKey(v1, v2);
+        if (!seenEdges.has(key)) {
+          linePositions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
+          seenEdges.add(key);
+        }
       }
     });
     
@@ -75,9 +86,11 @@ const GoldbergGlobe = ({
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geo.setAttribute('aCellId', new THREE.Int32BufferAttribute(cellIds, 1));
     geo.computeVertexNormals();
+    geo.computeBoundingSphere();
 
     const lGeo = new THREE.BufferGeometry();
     lGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+    lGeo.computeBoundingSphere();
 
     return { geometry: geo, lineGeometry: lGeo, cellMap: map };
   }, [board]);
@@ -97,7 +110,6 @@ const GoldbergGlobe = ({
       if (cell.id === endNode) { r = 1.0, g = 0.2, b = 0.2; } // End
       
       if (hoveredCell?.id === cell.id) {
-         // High-intensity highlight
          r = 1.0; g = 1.0; b = 1.0;
       }
 
@@ -112,19 +124,12 @@ const GoldbergGlobe = ({
     colorAttr.needsUpdate = true;
   }, [board, startNode, endNode, pathSet, hoveredCell, geometry, cellMap]);
 
-  // Accurate Picking using the embedded Cell ID attribute
   const getCellFromEvent = useCallback((e: any) => {
     const intersect = e.intersections && e.intersections[0];
     const faceIndex = intersect ? intersect.faceIndex : e.faceIndex;
-    
     if (faceIndex === undefined) return null;
-    
     const cellIdAttr = geometry.getAttribute('aCellId') as THREE.BufferAttribute;
     if (!cellIdAttr) return null;
-
-    // In a non-indexed geometry, faceIndex corresponds to the triangle sequence.
-    // Each triangle has 3 vertices. Since our attribute is 1-component per vertex,
-    // we fetch from vertex (faceIndex * 3).
     const id = cellIdAttr.getX(faceIndex * 3);
     return board.cells[id] || null;
   }, [geometry, board]);
@@ -144,13 +149,18 @@ const GoldbergGlobe = ({
         }}
         onPointerOut={() => onCellHover(null)}
       >
-        <meshStandardMaterial vertexColors side={THREE.FrontSide} />
+        <meshStandardMaterial 
+          vertexColors 
+          side={THREE.FrontSide} 
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+        />
       </mesh>
       
-      {/* High-contrast Hover/Selection Highlight */}
       {hoveredCell && (
-        <mesh position={hoveredCell.center.clone().multiplyScalar(1.002)}>
-           <sphereGeometry args={[0.015, 16, 16]} />
+        <mesh position={hoveredCell.center.clone().multiplyScalar(1.001)}>
+           <sphereGeometry args={[0.005, 16, 16]} />
            <meshBasicMaterial color="#ffffff" />
         </mesh>
       )}
@@ -158,11 +168,9 @@ const GoldbergGlobe = ({
       <lineSegments geometry={lineGeometry}>
         <lineBasicMaterial 
           color="black" 
-          polygonOffset 
-          polygonOffsetFactor={1} 
-          polygonOffsetUnits={1}
-          opacity={0.2}
+          opacity={0.4}
           transparent={false}
+          depthWrite={true}
         />
       </lineSegments>
     </group>
@@ -271,11 +279,11 @@ function App() {
         </div>
       </div>
       
-      <Canvas camera={{ position: [0, 0, 3], near: 0.01 }} dpr={[1, 2]}>
+      <Canvas camera={{ position: [0, 0, 6], fov: 25, near: 0.1, far: 100 }} dpr={[1, 2]}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={2.5} />
         <pointLight position={[-10, -5, -10]} intensity={1.5} color="#3498db" />
-        <OrbitControls minDistance={1.5} maxDistance={10} makeDefault />
+        <OrbitControls minDistance={1.1} maxDistance={10} makeDefault zoomSpeed={2} />
         <GoldbergGlobe 
           board={board}
           startNode={startNode}
@@ -291,4 +299,3 @@ function App() {
 }
 
 export default App;
-

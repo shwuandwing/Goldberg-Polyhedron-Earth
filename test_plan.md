@@ -36,10 +36,16 @@ This document outlines the procedure for verifying the geographical orientation 
 
 ### 5. Zoom & Clipping Verification
 Run: `node verify_zoom.js`
-**Files**: `zoom_03_in_extreme.png`
+**Files**: `zoom_02_in_deep.png`
 - **Check**: No "double lines" or "hexagons inside hexagons" (Z-fighting between front/back faces).
 - **Check**: No sudden "disappearing" landmasses when zooming in (Near-plane clipping).
 - **Check**: Borders should remain clean and sharp even when very close to the surface.
+
+### 6. Rotation Shape Stability
+Run: `node verify_rotation_shape.js`
+**Files**: `rotation_01_center.png`, `rotation_02_edge.png`
+- **Check**: Compare the landmass (e.g., Australia) in both shots. It should maintain its relative proportions and not appear "stretched" or "flattened" as it approaches the horizon.
+- **Check**: No "geometry popping" or parts of the world suddenly jumping into view during rotation.
 
 ## Automated Regression
 The script `src/utils/rendering.test.ts` provides mathematical verification that the GPU buffer correctly maps to the internal data structure. This should be run after any changes to `generateGoldberg` or `GoldbergGlobe`:
