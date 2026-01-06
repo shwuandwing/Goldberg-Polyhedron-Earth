@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { generateGoldberg } from './utils/goldberg';
 import type { GoldbergBoard, Cell } from './utils/goldberg';
 import { findPath } from './utils/pathfinding';
+import type { PathfindingAlgorithm } from './utils/pathfinding';
 import './App.css';
 
 const CellMesh = ({ 
@@ -65,6 +66,7 @@ function App() {
   const [endNode, setEndNode] = useState<number | null>(null);
   const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
   const [path, setPath] = useState<number[]>([]);
+  const [algorithm, setAlgorithm] = useState<PathfindingAlgorithm>('AStar');
 
   useEffect(() => {
     const b = generateGoldberg(20, 20);
@@ -73,12 +75,12 @@ function App() {
 
   useEffect(() => {
     if (board && startNode !== null && endNode !== null) {
-      const p = findPath(board.graph, startNode, endNode);
+      const p = findPath(board.graph, startNode, endNode, algorithm, board.cells);
       setPath(p);
     } else {
       setPath([]);
     }
-  }, [board, startNode, endNode]);
+  }, [board, startNode, endNode, algorithm]);
 
   const handleCellClick = (id: number) => {
     if (startNode === null) {
@@ -103,18 +105,38 @@ function App() {
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '12px', pointerEvents: 'none', minWidth: '240px', border: '1px solid rgba(255,255,255,0.1)' }}>
         <h2 style={{ margin: '0 0 10px 0', color: '#2ecc71', fontSize: '1.4em' }}>Geo-Goldberg Board</h2>
         <div style={{ fontSize: '0.9em' }}>
-            <p style={{ margin: '5px 0' }}>Resolution: GP(5, 5)</p>
+            <p style={{ margin: '5px 0' }}>Resolution: GP(20, 20)</p>
             <p style={{ margin: '5px 0' }}>Hexagons: {board.hexagonCount} | Pentagons: {board.pentagonCount}</p>
+            
+            <hr style={{ opacity: 0.2, margin: '15px 0' }} />
+            <div style={{ pointerEvents: 'auto', marginBottom: '15px' }}>
+                <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>Algorithm:</p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                        onClick={() => setAlgorithm('BFS')}
+                        style={{ flex: 1, padding: '6px', cursor: 'pointer', background: algorithm === 'BFS' ? '#2ecc71' : '#444', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                        BFS
+                    </button>
+                    <button 
+                        onClick={() => setAlgorithm('AStar')}
+                        style={{ flex: 1, padding: '6px', cursor: 'pointer', background: algorithm === 'AStar' ? '#2ecc71' : '#444', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                        A*
+                    </button>
+                </div>
+            </div>
+
             <hr style={{ opacity: 0.2, margin: '15px 0' }} />
             
             <div style={{ height: '80px' }}>
                 {hoveredCell ? (
                     <>
-                        <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Cell #{hoveredCell.id}</p>
+                        <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>Cell #{hoveredCell.id}</p>
                         <p style={{ margin: '5px 0', color: hoveredCell.isLand ? '#2ecc71' : '#3498db', fontWeight: 'bold' }}>
                            {hoveredCell.isLand ? '🌍 LAND' : '🌊 OCEAN'} 
                         </p>
-                        <p style={{ margin: '5px 0', opacity: 0.7 }}>
+                        <p style={{ margin: '5px 0', opacity: 0.7, color: 'white' }}>
                             F{hoveredCell.coordinates.face} ({hoveredCell.coordinates.u}, {hoveredCell.coordinates.v})
                         </p>
                     </>
@@ -122,8 +144,8 @@ function App() {
             </div>
             
             <hr style={{ opacity: 0.2, margin: '15px 0' }} />
-            <p style={{ margin: '5px 0' }}>Start: {startNode ?? '---'}</p>
-            <p style={{ margin: '5px 0' }}>End: {endNode ?? '---'}</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>Start: {startNode ?? '---'}</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>End: {endNode ?? '---'}</p>
             {path.length > 0 && (
                 <p style={{ margin: '10px 0', color: '#f1c40f', fontSize: '1.1em', fontWeight: 'bold' }}>
                     Path Length: {path.length} cells

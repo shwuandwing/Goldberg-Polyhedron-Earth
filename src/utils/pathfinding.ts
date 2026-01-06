@@ -1,4 +1,21 @@
-export function findPath(graph: Map<number, number[]>, startId: number, endId: number): number[] {
+import type { Cell } from './goldberg';
+
+export type PathfindingAlgorithm = 'BFS' | 'AStar';
+
+export function findPath(
+  graph: Map<number, number[]>, 
+  startId: number, 
+  endId: number, 
+  algorithm: PathfindingAlgorithm = 'BFS',
+  cells?: Cell[]
+): number[] {
+  if (algorithm === 'AStar' && cells) {
+    return findPathAStar(graph, startId, endId, cells);
+  }
+  return findPathBFS(graph, startId, endId);
+}
+
+function findPathBFS(graph: Map<number, number[]>, startId: number, endId: number): number[] {
   if (startId === endId) return [startId];
   
   const queue: number[] = [startId];
@@ -8,7 +25,6 @@ export function findPath(graph: Map<number, number[]>, startId: number, endId: n
   while (queue.length > 0) {
     const current = queue.shift()!;
     if (current === endId) {
-      // Reconstruct path
       const path: number[] = [endId];
       let curr = endId;
       while (curr !== startId) {
@@ -28,5 +44,59 @@ export function findPath(graph: Map<number, number[]>, startId: number, endId: n
     }
   }
   
-  return []; // No path found
+  return [];
+}
+
+function findPathAStar(
+  graph: Map<number, number[]>, 
+  startId: number, 
+  endId: number, 
+  cells: Cell[]
+): number[] {
+  if (startId === endId) return [startId];
+
+  const targetCenter = cells[endId].center;
+  const openSet: [number, number][] = [[startId, 0]];
+  const cameFrom = new Map<number, number>();
+  
+  const gScore = new Map<number, number>();
+  gScore.set(startId, 0);
+
+  const fScore = new Map<number, number>();
+  fScore.set(startId, cells[startId].center.distanceTo(targetCenter));
+
+  while (openSet.length > 0) {
+    openSet.sort((a, b) => a[1] - b[1]);
+    const [current] = openSet.shift()!;
+
+    if (current === endId) {
+      const path: number[] = [endId];
+      let curr = endId;
+      while (curr !== startId) {
+        curr = cameFrom.get(curr)!;
+        path.unshift(curr);
+      }
+      return path;
+    }
+
+    const neighbors = graph.get(current) || [];
+    for (const neighbor of neighbors) {
+      const tentativeGScore = (gScore.get(current) ?? Infinity) + 1;
+
+      if (tentativeGScore < (gScore.get(neighbor) ?? Infinity)) {
+        cameFrom.set(neighbor, current);
+        gScore.set(neighbor, tentativeGScore);
+        
+        const h = cells[neighbor].center.distanceTo(targetCenter);
+        const f = tentativeGScore + h;
+        fScore.set(neighbor, f);
+
+        if (!openSet.find(item => item[0] === neighbor)) {
+          openSet.push([neighbor, f]);
+        }
+      }
+    }
+  }
+
+  return [];
 }
