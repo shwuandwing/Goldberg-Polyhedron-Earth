@@ -1,6 +1,6 @@
 # Goldberg Earth Visualization
 
-A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(25, 25)$) Earth with interactive pathfinding and geographical classification.
+A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(43, 0)$) Earth with interactive pathfinding and geographical classification.
 
 ## Features
 
@@ -49,7 +49,7 @@ The project includes a comprehensive test suite covering geometry, geography, pa
 npm test
 ```
 Tests include:
-- **Geometry**: Euler characteristics, neighbor reciprocity, and $GP(25,25)$ consistency.
+- **Geometry**: Euler characteristics, neighbor reciprocity, and $GP(43,0)$ consistency.
 - **Geography**: Polar classification, major landmass checks, and lake exclusion.
 - **Pathfinding**: BFS vs A* hop-count parity and disconnection handling.
 - **Rendering**: Face-to-cell ID mapping and color priority.

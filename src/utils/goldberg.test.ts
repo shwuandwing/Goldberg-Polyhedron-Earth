@@ -38,11 +38,11 @@ describe('Goldberg Geometry', () => {
     expect(isPointInLand(southPole)).toBe(true);
   });
 
-  it('can generate a GP(25,25) board without neighbor errors', () => {
-    // This is the resolution used in the app. 
+  it('can generate a GP(43,0) board without neighbor errors', () => {
+    // This is the resolution used in the app (Class 1).
     // We want to ensure it doesn't throw the "Spatial search failed" error.
-    const board = generateGoldberg(25, 25);
-    expect(board.cells.length).toBe(18752);
+    const board = generateGoldberg(43, 0);
+    expect(board.cells.length).toBe(18492);
     expect(board.pentagonCount).toBe(12);
   }, 20000);
     

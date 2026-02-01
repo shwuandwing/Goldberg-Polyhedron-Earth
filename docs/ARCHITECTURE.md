@@ -7,7 +7,7 @@ This project implements a high-resolution, interactive Earth globe using a Goldb
 ### 1. Goldberg Geometry Generation (`src/utils/goldberg.ts`)
 - **Icosahedron Basis**: Starts with a standard 20-faced icosahedron defined by 12 vertices.
 - **Subdivision**: Each triangular face is subdivided into a grid based on parameters $(m, n)$.
-- **Resolution**: This project uses $GP(25, 25)$, resulting in exactly 18,752 cells (12 pentagons and 18,740 hexagons).
+- **Resolution**: This project uses $GP(43, 0)$ (Class 1), resulting in exactly 18,492 cells (12 pentagons and 18,480 hexagons).
 - **Spatial Optimization**: Uses 3D spatial hashing (bucket system) to deduplicate vertices and find neighbors efficiently. The neighbor search radius is tuned to ensure connectivity at high resolutions.
 - **Deduplication**: Points are merged if they are within $0.005$ units on a unit sphere.
 
@@ -22,7 +22,7 @@ This project implements a high-resolution, interactive Earth globe using a Goldb
 - **A* Search**: Optimized pathfinding using Euclidean distance as an admissible heuristic. A* is significantly faster for long-distance paths across the 18k+ cell graph.
 
 ### 4. Optimized Rendering (`src/utils/rendering.ts`)
-- **Geometry Merging**: All 18,752 cells are merged into a single `BufferGeometry` to minimize draw calls and maximize GPU throughput.
+- **Geometry Merging**: All 18,492 cells are merged into a single `BufferGeometry` to minimize draw calls and maximize GPU throughput.
 - **Vertex Attributes**: 
   - `position`: Triangle vertices for all cells.
   - `color`: Vertex colors updated dynamically via `updateColors`.
@@ -37,4 +37,4 @@ This project implements a high-resolution, interactive Earth globe using a Goldb
 
 - **Triangulation Number ($T$):** $T = m^2 + mn + n^2$
 - **Total Cells ($F$):** $10(T - 1) + 12$
-- For $(25, 25)$: $T = 1875$, Total Cells = $10(1874) + 12 = 18,752$.
+- For $(43, 0)$: $T = 1849$, Total Cells = $10(1848) + 12 = 18,492$.

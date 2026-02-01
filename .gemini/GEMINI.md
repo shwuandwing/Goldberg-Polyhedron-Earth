@@ -2,7 +2,7 @@
 
 ## Project Identity
 - **Context**: High-resolution Goldberg Polyhedron Earth visualization.
-- **Core Parameters**: $GP(25, 25)$, ~18,762 cells.
+- **Core Parameters**: $GP(43, 0)$, ~18,492 cells.
 - **Tech Stack**: Rust (Bevy 0.15) and TypeScript (React/Three.js).
 
 ## Architecture Decisions
@@ -14,7 +14,7 @@
 
 ## Current State
 - **Rust Version**: High-performance reference implementation using Bevy.
-- **TypeScript Version**: Reached parity with (and exceeds initial) resolution ($GP(25,25)$) and performance (via geometry merging).
+- **TypeScript Version**: Reached parity with (and exceeds initial) resolution ($GP(43,0)$) and performance (via geometry merging).
 - **UI**: Includes algorithm toggles (BFS vs A*) and high-fidelity interaction feedback.
 
 ## Technical Nuances

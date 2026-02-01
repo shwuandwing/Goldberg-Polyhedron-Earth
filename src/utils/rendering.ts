@@ -82,9 +82,15 @@ export function updateColors({
 
     const { start, count } = mapping;
     
-    // Default colors
-    let r = 0.1, g = 0.35, b = 0.6; // Deep ocean
-    if (cell.isLand) { r = 0.1, g = 0.45, b = 0.2; } // Lush land
+    // Face-based shading factor (0.85 to 1.15)
+    const faceId = cell.coordinates.face;
+    const shade = 0.85 + ((faceId * 7) % 31) / 100;
+
+    // Default colors with face shading
+    let r = 0.1 * shade, g = 0.35 * shade, b = 0.6 * shade; // Deep ocean
+    if (cell.isLand) { 
+      r = 0.1 * shade, g = 0.45 * shade, b = 0.2 * shade; 
+    } // Lush land
     
     // State-based overrides (in priority order)
     if (pathSet.has(cell.id)) { r = 1.0, g = 0.8, b = 0.0; } // Gold path
