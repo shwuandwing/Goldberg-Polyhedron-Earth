@@ -63,5 +63,39 @@ describe('Goldberg Geometry', () => {
           });
         });
       });
+
+  it('verifies polar alignment: pentagons are at the poles', () => {
+    const board = generateGoldberg(10, 0);
+    
+    // Find cells closest to North and South poles
+    let northPoleCell = board.cells[0];
+    let southPoleCell = board.cells[0];
+    let minNorthDist = Infinity;
+    let minSouthDist = Infinity;
+    
+    const northTarget = new THREE.Vector3(0, 1, 0);
+    const southTarget = new THREE.Vector3(0, -1, 0);
+    
+    board.cells.forEach(cell => {
+      const dN = cell.center.distanceTo(northTarget);
+      const dS = cell.center.distanceTo(southTarget);
+      
+      if (dN < minNorthDist) {
+        minNorthDist = dN;
+        northPoleCell = cell;
+      }
+      if (dS < minSouthDist) {
+        minSouthDist = dS;
+        southPoleCell = cell;
+      }
     });
     
+    // The closest cells to the poles must be pentagons
+    expect(northPoleCell.type).toBe('pentagon');
+    expect(southPoleCell.type).toBe('pentagon');
+    
+    // They should be very close to the actual pole coordinates
+    expect(minNorthDist).toBeLessThan(0.01);
+    expect(minSouthDist).toBeLessThan(0.01);
+  });
+});

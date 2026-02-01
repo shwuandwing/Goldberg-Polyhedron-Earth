@@ -43,7 +43,7 @@ export function pointInPolygon(point: [number, number], vs: number[][]) {
 
 export function isPointInLand(pos: THREE.Vector3): boolean {
   // Orientation Fix: Consistent with Rust reference and to ensure East is Right
-  const lon = Math.atan2(-pos.x, pos.z) * (180 / Math.PI);
+  const lon = Math.atan2(pos.x, pos.z) * (180 / Math.PI);
   const lat = Math.asin(pos.y) * (180 / Math.PI);
   const point: [number, number] = [lon, lat];
 

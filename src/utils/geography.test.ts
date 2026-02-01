@@ -8,7 +8,7 @@ describe('Geography Logic', () => {
     const lat = -25 * (Math.PI / 180);
     const lon = 135 * (Math.PI / 180);
     const pos = new THREE.Vector3(
-      -Math.sin(lon) * Math.cos(lat),
+      Math.sin(lon) * Math.cos(lat),
       Math.sin(lat),
       Math.cos(lon) * Math.cos(lat)
     );
@@ -20,7 +20,7 @@ describe('Geography Logic', () => {
     const lat = 0;
     const lon = -160 * (Math.PI / 180);
     const pos = new THREE.Vector3(
-      -Math.sin(lon) * Math.cos(lat),
+      Math.sin(lon) * Math.cos(lat),
       Math.sin(lat),
       Math.cos(lon) * Math.cos(lat)
     );

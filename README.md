@@ -5,15 +5,19 @@ A high-resolution 3D visualization of a Goldberg Polyhedron ($GP(43, 0)$) Earth 
 ## Features
 
 - **High-Resolution Generation**: Algorithmic generation of over 18,000 cells (hexagons and pentagons).
+- **Dual View Modes**:
+  - **🌍 3D Globe**: Spherical Earth with correct orientation (East is Right).
+  - **🗺️ 2D Map**: Unfolded icosahedral net using Gnomonic projection to preserve straight-line geodesics.
 - **Geographical Accuracy**: Real-world landmass mapping using Natural Earth data.
 - **Pathfinding Suite**:
-  - **A* Search**: Fast, spatially-aware pathfinding using Euclidean heuristics.
+  - **A* Search**: Fast, spatially-aware pathfinding. Now uses dynamic heuristic scaling based on grid resolution ($m$) to strictly follow Great Circle routes.
   - **BFS**: Breadth-First Search for shortest cell-count paths.
 - **Optimized Rendering**: Merged geometry approach for smooth 60fps performance at high cell counts.
 - **Interactive UI**:
+  - View mode toggle (3D vs 2D).
   - Algorithm selection toggle.
   - Precise cell picking with visual feedback (white highlight and center sphere).
-  - Path reconstruction and length display.
+  - Automatic camera resetting and rotation locking in 2D mode.
 
 ## Visual Feedback
 

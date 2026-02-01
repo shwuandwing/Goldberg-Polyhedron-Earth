@@ -21,8 +21,14 @@ This project implements a high-resolution, interactive Earth globe using a Goldb
 - **BFS**: Standard Breadth-First Search for shortest hop-count paths.
 - **A* Search**: Optimized pathfinding using Euclidean distance as an admissible heuristic. A* is significantly faster for long-distance paths across the 18k+ cell graph.
 
-### 4. Optimized Rendering (`src/utils/rendering.ts`)
+### 4. Optimized Rendering (`src/utils/rendering.ts` & `src/utils/projection.ts`)
 - **Geometry Merging**: All 18,492 cells are merged into a single `BufferGeometry` to minimize draw calls and maximize GPU throughput.
+- **2D Projection**:
+  - Uses a **Gnomonic Barycentric Projection** to unfold the icosahedron faces onto a flat zigzag net.
+  - This specific projection ensures that Great Circle paths (geodesics) on the sphere map to straight lines on the 2D plane.
+  - Vertices are dynamically updated in the GPU buffer when switching modes via `updateGeometryPositions`.
+- **Camera Management**: 
+  - Switching to 2D mode triggers a camera reset and rotation lock to ensure the map is viewed as a flat, correctly oriented plane.
 - **Vertex Attributes**: 
   - `position`: Triangle vertices for all cells.
   - `color`: Vertex colors updated dynamically via `updateColors`.

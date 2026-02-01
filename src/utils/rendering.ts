@@ -48,6 +48,8 @@ export function createGlobeGeometry(board: GoldbergBoard): RenderingData {
   geo.computeVertexNormals();
   geo.computeBoundingSphere();
 
+  geo.userData = { cellMap: map };
+
   return { geometry: geo, cellMap: map };
 }
 

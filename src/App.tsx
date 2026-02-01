@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateGoldberg } from './utils/goldberg';
@@ -7,7 +7,36 @@ import type { GoldbergBoard, Cell } from './utils/goldberg';
 import { findPath } from './utils/pathfinding';
 import type { PathfindingAlgorithm } from './utils/pathfinding';
 import { createGlobeGeometry, updateColors } from './utils/rendering';
+import { updateGeometryPositions, projectTo2D } from './utils/projection';
 import './App.css';
+
+const CameraController = ({ viewMode }: { viewMode: '3D' | '2D' }) => {
+  const { camera, controls } = useThree();
+
+  useEffect(() => {
+    if (viewMode === '2D') {
+      // Reset camera to look straight at the map center
+      camera.position.set(0, 0, 6);
+      camera.lookAt(0, 0, 0);
+      camera.up.set(0, 1, 0);
+      
+      if (controls) {
+        // Reset orbit target to center
+        (controls as any).target.set(0, 0, 0);
+        (controls as any).update();
+        // Disable rotation to keep it "2D"
+        (controls as any).enableRotate = false;
+      }
+    } else {
+      // 3D Mode
+      if (controls) {
+        (controls as any).enableRotate = true;
+      }
+    }
+  }, [viewMode, camera, controls]);
+
+  return null;
+};
 
 const GoldbergGlobe = ({ 
   board, 
@@ -16,7 +45,8 @@ const GoldbergGlobe = ({
   path, 
   hoveredCell, 
   onCellClick, 
-  onCellHover 
+  onCellHover,
+  viewMode
 }: { 
   board: GoldbergBoard,
   startNode: number | null,
@@ -24,7 +54,8 @@ const GoldbergGlobe = ({
   path: number[],
   hoveredCell: Cell | null,
   onCellClick: (id: number) => void,
-  onCellHover: (cell: Cell | null) => void
+  onCellHover: (cell: Cell | null) => void,
+  viewMode: '3D' | '2D'
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -33,6 +64,11 @@ const GoldbergGlobe = ({
 
   // Create merged geometries with cell IDs for perfect picking
   const { geometry, cellMap } = useMemo(() => createGlobeGeometry(board), [board]);
+
+  // Handle View Mode Changes (3D <-> 2D)
+  useEffect(() => {
+    updateGeometryPositions(geometry, board, viewMode);
+  }, [geometry, board, viewMode]);
 
   // Handle Dynamic Color Updates
   useEffect(() => {
@@ -57,6 +93,18 @@ const GoldbergGlobe = ({
     return board.cells[id] || null;
   }, [geometry, board]);
 
+  // Calculate hover highlight position
+  const hoverPos = useMemo(() => {
+    if (!hoveredCell) return null;
+    if (viewMode === '2D') {
+        const p = new THREE.Vector3();
+        projectTo2D(hoveredCell.center, hoveredCell.coordinates.face, p);
+        p.z += 0.05; // Lift slightly above plane
+        return p;
+    }
+    return hoveredCell.center.clone().multiplyScalar(1.001);
+  }, [hoveredCell, viewMode]);
+
   return (
     <group>
       <mesh 
@@ -74,12 +122,12 @@ const GoldbergGlobe = ({
       >
         <meshStandardMaterial 
           vertexColors 
-          side={THREE.FrontSide} 
+          side={THREE.DoubleSide} 
         />
       </mesh>
       
-      {hoveredCell && (
-        <mesh position={hoveredCell.center.clone().multiplyScalar(1.001)}>
+      {hoverPos && (
+        <mesh position={hoverPos}>
            <sphereGeometry args={[0.005, 16, 16]} />
            <meshBasicMaterial color="#ffffff" />
         </mesh>
@@ -88,27 +136,32 @@ const GoldbergGlobe = ({
   );
 };
 
-function App() {
+function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
   const [board, setBoard] = useState<GoldbergBoard | null>(null);
   const [startNode, setStartNode] = useState<number | null>(null);
   const [endNode, setEndNode] = useState<number | null>(null);
   const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
   const [path, setPath] = useState<number[]>([]);
   const [algorithm, setAlgorithm] = useState<PathfindingAlgorithm>('AStar');
+  const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
 
   useEffect(() => {
-    const b = generateGoldberg(43, 0);
-    setBoard(b);
-  }, []);
+    // Defer generation to allow UI to paint "Calculating..."
+    const timer = setTimeout(() => {
+      const b = generateGoldberg(m, n);
+      setBoard(b);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [m, n]);
 
   useEffect(() => {
     if (board && startNode !== null && endNode !== null) {
-      const p = findPath(board.graph, startNode, endNode, algorithm, board.cells);
+      const p = findPath(board.graph, startNode, endNode, algorithm, board.cells, m);
       setPath(p);
     } else {
       setPath([]);
     }
-  }, [board, startNode, endNode, algorithm]);
+  }, [board, startNode, endNode, algorithm, m]);
 
   const handleCellClick = (id: number) => {
     if (startNode === null) {
@@ -133,10 +186,29 @@ function App() {
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '12px', pointerEvents: 'none', minWidth: '240px', border: '1px solid rgba(255,255,255,0.1)' }}>
         <h2 style={{ margin: '0 0 10px 0', color: '#2ecc71', fontSize: '1.4em' }}>Geo-Goldberg Board</h2>
         <div style={{ fontSize: '0.9em' }}>
-            <p style={{ margin: '5px 0', color: 'white' }}>Resolution: GP(43, 0)</p>
+            <p style={{ margin: '5px 0', color: 'white' }}>Resolution: GP({m}, {n})</p>
             <p style={{ margin: '5px 0', color: 'white' }}>Cells: {board.cells.length.toLocaleString()}</p>
             
             <hr style={{ opacity: 0.2, margin: '15px 0' }} />
+            
+            <div style={{ pointerEvents: 'auto', marginBottom: '15px' }}>
+                <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>View Mode:</p>        
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                        onClick={() => setViewMode('3D')}
+                        style={{ flex: 1, padding: '6px', cursor: 'pointer', background: viewMode === '3D' ? '#3498db' : '#444', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                        3D Globe
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('2D')}
+                        style={{ flex: 1, padding: '6px', cursor: 'pointer', background: viewMode === '2D' ? '#3498db' : '#444', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                        2D Map
+                    </button>
+                </div>
+            </div>
+
             <div style={{ pointerEvents: 'auto', marginBottom: '15px' }}>
                 <p style={{ margin: '5px 0', fontWeight: 'bold', color: 'white' }}>Algorithm:</p>        
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -195,6 +267,7 @@ function App() {
         <pointLight position={[10, 10, 10]} intensity={2.5} />
         <pointLight position={[-10, -5, -10]} intensity={1.5} color="#3498db" />
         <OrbitControls minDistance={1.1} maxDistance={10} makeDefault zoomSpeed={2} />
+        <CameraController viewMode={viewMode} />
         <GoldbergGlobe 
           board={board}
           startNode={startNode}
@@ -203,6 +276,7 @@ function App() {
           hoveredCell={hoveredCell}
           onCellClick={handleCellClick}
           onCellHover={setHoveredCell}
+          viewMode={viewMode}
         />
       </Canvas>
     </>

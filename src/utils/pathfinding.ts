@@ -7,10 +7,11 @@ export function findPath(
   startId: number, 
   endId: number, 
   algorithm: PathfindingAlgorithm = 'BFS',
-  cells?: Cell[]
+  cells?: Cell[],
+  m?: number
 ): number[] {
   if (algorithm === 'AStar' && cells) {
-    return findPathAStar(graph, startId, endId, cells);
+    return findPathAStar(graph, startId, endId, cells, m);
   }
   return findPathBFS(graph, startId, endId);
 }
@@ -51,7 +52,8 @@ function findPathAStar(
   graph: Map<number, number[]>, 
   startId: number, 
   endId: number, 
-  cells: Cell[]
+  cells: Cell[],
+  m: number = 43
 ): number[] {
   if (startId === endId) return [startId];
 
@@ -62,8 +64,12 @@ function findPathAStar(
   const gScore = new Map<number, number>();
   gScore.set(startId, 0);
 
+  // Scale factor: roughly how many hops per unit of 3D distance.
+  // Circumference is 2*PI. Total hops around equator is ~4*m.
+  const scaleFactor = (4 * m) / (2 * Math.PI);
+
   const fScore = new Map<number, number>();
-  fScore.set(startId, cells[startId].center.distanceTo(targetCenter));
+  fScore.set(startId, cells[startId].center.distanceTo(targetCenter) * scaleFactor);
 
   while (openSet.length > 0) {
     openSet.sort((a, b) => a[1] - b[1]);
@@ -87,7 +93,8 @@ function findPathAStar(
         cameFrom.set(neighbor, current);
         gScore.set(neighbor, tentativeGScore);
         
-        const h = cells[neighbor].center.distanceTo(targetCenter);
+        // Use the dynamic scale factor to keep h comparable to g
+        const h = cells[neighbor].center.distanceTo(targetCenter) * scaleFactor;
         const f = tentativeGScore + h;
         fScore.set(neighbor, f);
 

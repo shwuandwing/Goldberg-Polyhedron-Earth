@@ -50,4 +50,20 @@ describe('Pathfinding Logic', () => {
     const path = findPath(board.graph, 5, 5, 'BFS');
     expect(path).toEqual([5]);
   });
+
+  describe('Dynamic Scaling Parity', () => {
+    [2, 5, 10].forEach(m => {
+      it(`finds shortest path parity at resolution m=${m}`, () => {
+        const b = generateGoldberg(m, 0);
+        const start = 0;
+        const end = b.cells.length - 1;
+        
+        const pathBFS = findPath(b.graph, start, end, 'BFS');
+        const pathAStar = findPath(b.graph, start, end, 'AStar', b.cells, m);
+        
+        // A* should find a path with the same number of hops as BFS
+        expect(pathAStar.length).toBe(pathBFS.length);
+      });
+    });
+  });
 });
