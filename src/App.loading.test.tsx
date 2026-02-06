@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import * as GoldbergUtils from './utils/goldberg';
+import type { GoldbergBoard } from './utils/goldberg';
 import React from 'react';
 
 // Mock Three.js/Fiber to avoid WebGL context issues
@@ -24,14 +25,14 @@ vi.mock('./utils/projection', () => ({
 describe('App Loading Flow', () => {
   it('shows loading screen before board generation completes', async () => {
     // 1. Setup the mock to return a dummy board
-    const mockBoard = {
+    const mockBoard: GoldbergBoard = {
       cells: [],
       graph: new Map(),
       pentagonCount: 0,
       hexagonCount: 0
     };
 
-    const generateSpy = vi.spyOn(GoldbergUtils, 'generateGoldberg').mockReturnValue(mockBoard as any);
+    const generateSpy = vi.spyOn(GoldbergUtils, 'generateGoldberg').mockReturnValue(mockBoard);
 
     // 2. Render the App
     render(<App />);

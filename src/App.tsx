@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateGoldberg } from './utils/goldberg';
@@ -11,7 +12,7 @@ import { updateGeometryPositions, projectTo2D } from './utils/projection';
 import './App.css';
 
 const CameraController = ({ viewMode }: { viewMode: '3D' | '2D' }) => {
-  const { camera, controls } = useThree();
+  const { camera } = useThree();
 
   useEffect(() => {
     if (viewMode === '2D') {
@@ -20,20 +21,8 @@ const CameraController = ({ viewMode }: { viewMode: '3D' | '2D' }) => {
       camera.lookAt(0, 0, 0);
       camera.up.set(0, 1, 0);
       
-      if (controls) {
-        // Reset orbit target to center
-        (controls as any).target.set(0, 0, 0);
-        (controls as any).update();
-        // Disable rotation to keep it "2D"
-        (controls as any).enableRotate = false;
-      }
-    } else {
-      // 3D Mode
-      if (controls) {
-        (controls as any).enableRotate = true;
-      }
     }
-  }, [viewMode, camera, controls]);
+  }, [viewMode, camera]);
 
   return null;
 };
@@ -83,10 +72,10 @@ const GoldbergGlobe = ({
     });
   }, [board, startNode, endNode, pathSet, hoveredCell, geometry, cellMap]);
 
-  const getCellFromEvent = useCallback((e: any) => {
-    const intersect = e.intersections && e.intersections[0];
-    const faceIndex = intersect ? intersect.faceIndex : e.faceIndex;
-    if (faceIndex === undefined) return null;
+  const getCellFromEvent = useCallback((e: ThreeEvent<MouseEvent> | ThreeEvent<PointerEvent>) => {
+    const intersect = e.intersections?.[0];
+    const faceIndex = intersect?.faceIndex ?? e.faceIndex;
+    if (faceIndex == null) return null;
     const cellIdAttr = geometry.getAttribute('aCellId') as THREE.BufferAttribute;
     if (!cellIdAttr) return null;
     const id = cellIdAttr.getX(faceIndex * 3);
@@ -141,7 +130,6 @@ function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
   const [startNode, setStartNode] = useState<number | null>(null);
   const [endNode, setEndNode] = useState<number | null>(null);
   const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
-  const [path, setPath] = useState<number[]>([]);
   const [algorithm, setAlgorithm] = useState<PathfindingAlgorithm>('AStar');
   const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
 
@@ -154,13 +142,11 @@ function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
     return () => clearTimeout(timer);
   }, [m, n]);
 
-  useEffect(() => {
-    if (board && startNode !== null && endNode !== null) {
-      const p = findPath(board.graph, startNode, endNode, algorithm, board.cells, m);
-      setPath(p);
-    } else {
-      setPath([]);
+  const path = useMemo(() => {
+    if (!board || startNode === null || endNode === null) {
+      return [];
     }
+    return findPath(board.graph, startNode, endNode, algorithm, board.cells, m);
   }, [board, startNode, endNode, algorithm, m]);
 
   const handleCellClick = (id: number) => {
@@ -171,7 +157,6 @@ function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
     } else {
       setStartNode(id);
       setEndNode(null);
-      setPath([]);
     }
   };
 
@@ -254,7 +239,7 @@ function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
         </div>
         <div style={{ pointerEvents: 'auto', marginTop: '15px' }}>
             <button 
-                onClick={() => { setStartNode(null); setEndNode(null); setPath([]); }}
+                onClick={() => { setStartNode(null); setEndNode(null); }}
                 style={{ width: '100%', padding: '8px', cursor: 'pointer', background: '#444', color: 'white', border: 'none', borderRadius: '4px' }}
             >
                 Reset Trip
@@ -266,7 +251,7 @@ function App({ m = 43, n = 0 }: { m?: number, n?: number }) {
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={2.5} />
         <pointLight position={[-10, -5, -10]} intensity={1.5} color="#3498db" />
-        <OrbitControls minDistance={1.1} maxDistance={10} makeDefault zoomSpeed={2} />
+        <OrbitControls minDistance={1.1} maxDistance={10} makeDefault zoomSpeed={2} enableRotate={viewMode === '3D'} />
         <CameraController viewMode={viewMode} />
         <GoldbergGlobe 
           board={board}

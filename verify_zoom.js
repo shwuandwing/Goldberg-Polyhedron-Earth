@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5173/');
   await page.waitForSelector('canvas', { timeout: 60000 });
   await page.waitForTimeout(3000);
 

@@ -89,16 +89,36 @@ export function updateColors({
     const shade = 0.85 + ((faceId * 7) % 31) / 100;
 
     // Default colors with face shading
-    let r = 0.1 * shade, g = 0.35 * shade, b = 0.6 * shade; // Deep ocean
+    let r = 0.1 * shade;
+    let g = 0.35 * shade;
+    let b = 0.6 * shade; // Deep ocean
     if (cell.isLand) { 
-      r = 0.1 * shade, g = 0.45 * shade, b = 0.2 * shade; 
+      r = 0.1 * shade;
+      g = 0.45 * shade;
+      b = 0.2 * shade;
     } // Lush land
     
     // State-based overrides (in priority order)
-    if (pathSet.has(cell.id)) { r = 1.0, g = 0.8, b = 0.0; } // Gold path
-    if (cell.id === startNode) { r = 1.0, g = 0.5, b = 0.0; } // Start
-    if (cell.id === endNode) { r = 1.0, g = 0.2, b = 0.2; } // End
-    if (cell.id === hoveredCellId) { r = 1.0, g = 1.0, b = 1.0; } // Hover (Highest priority)
+    if (pathSet.has(cell.id)) {
+      r = 1.0;
+      g = 0.8;
+      b = 0.0;
+    } // Gold path
+    if (cell.id === startNode) {
+      r = 1.0;
+      g = 0.5;
+      b = 0.0;
+    } // Start
+    if (cell.id === endNode) {
+      r = 1.0;
+      g = 0.2;
+      b = 0.2;
+    } // End
+    if (cell.id === hoveredCellId) {
+      r = 1.0;
+      g = 1.0;
+      b = 1.0;
+    } // Hover (Highest priority)
 
     for (let i = 0; i < count; i++) {
       const idx = (start + i) * 3;

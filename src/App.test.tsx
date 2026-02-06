@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import * as THREE from 'three';
 import App from './App';
 import * as GoldbergUtils from './utils/goldberg';
 
@@ -20,7 +21,7 @@ vi.spyOn(GoldbergUtils, 'generateGoldberg').mockImplementation(() => {
     cells: Array.from({ length: 12 }, (_, i) => ({
       id: i,
       type: 'pentagon' as const,
-      center: { x: 0, y: 0, z: 0 } as any,
+      center: new THREE.Vector3(0, 0, 0),
       vertices: [],
       neighbors: [],
       coordinates: { face: 0, u: 0, v: 0 },

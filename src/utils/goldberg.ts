@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Feature, MultiPolygon, Polygon } from 'geojson';
 import landData from './land.json';
 
 export type CellType = 'pentagon' | 'hexagon';
@@ -27,6 +28,8 @@ export interface GoldbergBoard {
 }
 
 const PHI = (1 + Math.sqrt(5)) / 2;
+type LandFeature = Feature<Polygon | MultiPolygon, { featurecla?: string }>;
+const landFeatures = (landData as { features: LandFeature[] }).features;
 
 export function pointInPolygon(point: [number, number], vs: number[][]) {
   const x = point[0], y = point[1];
@@ -50,9 +53,9 @@ export function isPointInLand(pos: THREE.Vector3): boolean {
   let inLand = false;
   let inLake = false;
 
-  for (const feature of (landData as any).features) {
+  for (const feature of landFeatures) {
     const geometry = feature.geometry;
-    const isLake = feature.properties.featurecla === 'Lake';
+    const isLake = feature.properties?.featurecla === 'Lake';
     
     if (geometry.type === 'Polygon') {
       if (isInPolygon(point, geometry.coordinates)) {

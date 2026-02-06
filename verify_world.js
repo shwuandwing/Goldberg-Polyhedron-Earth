@@ -9,7 +9,7 @@ import { chromium } from 'playwright';
   const page = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 800 });
   
-  const url = 'http://localhost:5174/';
+  const url = 'http://localhost:5173/';
   console.log(`Connecting to ${url}...`);
   
   try {

@@ -118,11 +118,6 @@ stripIndices.forEach((faceIdx, k) => {
     const pBR = new THREE.Vector2((k-1)/2 + 1.5, 0);
     const pT  = new THREE.Vector2((k-1)/2 + 1, H);
     
-    // Use switch/lookup or consistent ordering check?
-    // Let's rely on the explicit list above.
-    const f = icoFaces[faceIdx];
-    // We set p0, p1, p2 corresponding to f[0], f[1], f[2]
-    
     // Face 15 [4, 9, 5]: 4(BR), 9(BL), 5(T)
     if (faceIdx === 15) setFaceTransform(faceIdx, pBR, pBL, pT);
     // Face 16 [2, 4, 11]: 2(BR), 4(BL), 11(T)
@@ -178,12 +173,6 @@ southIndices.forEach((faceIdx, i) => {
 // ------------------------------------------------------------------
 // Projection Logic
 // ------------------------------------------------------------------
-
-// Reuse vectors to reduce GC
-const _v0 = new THREE.Vector3();
-const _v1 = new THREE.Vector3();
-const _v2 = new THREE.Vector3();
-const _p = new THREE.Vector3();
 
 const _bary = new THREE.Vector3(); // x=u, y=v, z=w
 const _mat3 = new THREE.Matrix3();
@@ -248,7 +237,6 @@ export function updateGeometryPositions(
   const cellMap = (geometry.userData.cellMap) as Map<number, {start: number, count: number}>;
   
   const _tempPos = new THREE.Vector3();
-  const _tempVert = new THREE.Vector3();
 
   // If 3D, we can just regenerate or restore?
   // Restoring from board data is safest as we might not store original state.

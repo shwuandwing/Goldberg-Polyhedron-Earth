@@ -4,7 +4,7 @@ This document outlines the procedure for verifying the geographical orientation 
 
 ## Setup
 1. Start the development server: `npm run dev`
-2. Ensure the server is running on `http://localhost:5174/` (or update `verify_world.js`).
+2. Ensure the server is running on `http://localhost:5173/` (or update `verify_world.js`).
 3. Run the verification scripts: `node verify_world.js; node verify_zoom.js; node verify_rotation_shape.js`
 
 ## Agent Verification Instruction
